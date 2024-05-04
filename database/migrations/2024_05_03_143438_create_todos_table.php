@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('todos', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Adding a foreign key reference to users table
             $table->string('task');
             $table->boolean('completed')->default(false);
             $table->timestamps();

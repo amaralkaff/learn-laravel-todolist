@@ -8,6 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class Todo extends Model
 {
     use HasFactory;
+
     protected $table = 'todos';
-    protected $fillable = ['task', 'completed'];
+    protected $fillable = ['user_id', 'task', 'completed']; // Include 'user_id' to allow mass assignment
+
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

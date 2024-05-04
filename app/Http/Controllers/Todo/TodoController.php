@@ -8,94 +8,57 @@ use Illuminate\Http\Request;
 
 class TodoController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $data = Todo::orderBy('created_at', 'desc')->get();
-        return view('todo.app', ['data' => $data]);
+        $todos = Todo::where('user_id', auth()->id())
+                    ->orderBy('created_at', 'desc')
+                    ->simplePaginate(10);
+
+        return view('todos.index', compact('todos'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+
     public function create()
     {
-        return view('todo.create');
+        return view('todos.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        $request->validate([
-            'task' => 'required|string|max:25|min:3',
-        ], [
-            'task.required' => 'Please enter a task.',
-            'task.string' => 'Task must be a string.',
-            'task.max' => 'Task must not exceed 25 characters.',
-            'task.min' => 'Task must be at least 3 characters.',
-        ]);
+    $validatedData = $request->validate([
+        'task' => 'required|string|max:255|min:3'
+    ]);
 
-        $data = [
-            'task' => $request->input('task'),
-        ];
+    $validatedData['user_id'] = auth()->id();
 
-        Todo::create($data);
-        return redirect()->route('todo')->with('success', 'Task added successfully.');
+    Todo::create($validatedData);
+
+    return redirect()->route('todos.index')->with('success', 'Todo created successfully!');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function show(Todo $todo)
     {
-        $data = Todo::find($id);
-        return view('todo.show', ['data' => $data]);
-
+        $this->authorize('view', $todo);  // Ensures only the owner can view
+        return view('todos.show', compact('todo'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function edit(Todo $todo)
     {
-        $data = Todo::find($id);
-        return view('todo.edit', ['data' => $data]);
-
+        $this->authorize('update', $todo);  // Ensures only the owner can edit
+        return view('todos.edit', compact('todo'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Todo $todo)
     {
-        $request->validate([
-            'task' => 'required|string|max:25|min:3',
-        ], [
-            'task.required' => 'Please enter a task.',
-            'task.string' => 'Task must be a string.',
-            'task.max' => 'Task must not exceed 25 characters.',
-            'task.min' => 'Task must be at least 3 characters.',
-        ]);
-
-        $data = [
-            'task' => $request->input('task'),
-        ];
-
-        Todo::find($id)->update($data);
-        return redirect()->route('todo')->with('success', 'Task updated successfully.');
+        $this->authorize('update', $todo);  // Ensures only the owner can update
+        // Validation and update logic
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy(Todo $todo)
     {
-        $data = Todo::find($id);
-        $data->delete();
-        return redirect()->route('todo')->with('success', 'Task deleted successfully.');
+        $this->authorize('delete', $todo);  // Ensures only the owner can delete
+        $todo->delete();
+        return redirect()->route('todos.index')->with('success', 'Todo deleted successfully!');
     }
+
 }
